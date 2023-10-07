@@ -45,7 +45,7 @@ This tool does not guarantee that the assembled `.pld` code will behave in the s
 Additionally, it does not guarantee that the `.pld` file is a valid assembly (e. g. it does not validate
 if user is trying to use input pins as outputs, term limit, etc, and and will allow the user to do all sorts of silly stuff).
 
-Ginger is using Lark for parsing `.pld` grammar, so it only validates the **syntax**, not the **semantics**.
+Ginger is using Lark for parsing `.pld` grammar and only validates the **syntax**, not the **semantics**.
 
 So please use, say, `galasm` to assembled the `.pld` file first in order to see if it can be used to program a GAL in the first place,
 and then feel free to use Ginger!
