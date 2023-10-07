@@ -1,0 +1,37 @@
+GAL22V10
+Addr
+
+CLK   A8    A16   A17   A18   A19  /RD   /WR   /M     NC    RST   GND
+/OE   Q0    Q1    TMCK  NC   /TMEN /IO   /IN   /OUT  /RAM  /ROM   VCC
+
+;; Memory
+; RAM: $00000-$7FFFF
+RAM =   M  * /A19
+; ROM: $F0000-$FFFFF
+ROM =   M  *  A16  *  A17  *  A18  *  A19
+
+;; I/O
+; LED & DIP switches: $0000-$00FF
+OUT =  /M  *  /A8  *   WR
+IN  =  /M  *  /A8  *   RD
+; 8255: Ports $0100-$01FF
+IO  =  /M  *   A8
+
+;; Q1 - CPU clock, inverted modulo-3 counter, output (Q1) is inverted with 74HC14
+;; TMCK - 8253 timer clock, inverted modulo-2 counter of Q0, output (TMCK) is inverted with 74HC14
+; +----+----+------+
+; | Q0 | Q1 | TMCK |
+; +----+----+------+
+; | 1  | 1  | 1    |
+; | 0  | 1  | 1    |
+; | 0  | 0  | 1    |
+; | 1  | 1  | 0    |
+; | 0  | 1  | 0    |
+; | 0  | 0  | 0    |
+; +----+----+------+
+Q0.R   = /Q0 * /Q1 + RST  ; Set to 1 only if Q0==0 && Q1==0
+Q1.R   =  Q0 + /Q1 + RST ; Set to 0 only if Q0==0 && Q1==1
+TMCK.R = /Q0 * /Q1 * /TMCK + /Q0 *  Q1 * TMCK +  Q0 * Q1 * TMCK + RST  ; Flip if Q0==0 && Q1==0
+
+DESCRIPTION
+Address decoder for PK-88
