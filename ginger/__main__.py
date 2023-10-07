@@ -27,14 +27,14 @@ definition = (
     NAME: /[A-Za-z0-9_\.]+/
 
     pins: (PIN+ "\n")+
-    PIN: "/"? /[A-Z0-9]+/
+    PIN: "/"? /[A-Za-z0-9]+/
     MODE: "R" | "T" | "E"
     PIN_EXT: PIN "." MODE
 
     equations: equation ("\n"+ equation)*
     equation: dest "=" expr
     dest: PIN | PIN_EXT
-    expr: addend ("+" addend)*
+    expr: addend ("\n"? "+" "\n"? addend)*
     addend: src ("*" src)*
     src: PIN
 
