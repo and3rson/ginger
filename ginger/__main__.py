@@ -176,6 +176,7 @@ def main(source_filename, test_filename):
     in_pins = []
     out_pins = []
     header_printed = False
+    failures = 0
 
     state = {pin.name: False for pin in tree.pins}
     with open(test_filename, 'r') as fobj:
@@ -200,6 +201,7 @@ def main(source_filename, test_filename):
             if line.startswith('?'):
                 # Test case
                 line = line.strip('? ')
+                test_ok = True
                 for name, value in [term.strip().split('=') for term in line.split(' ')]:
                     expected = True if value == '1' else False if value == '0' else None
                     actual = Pin.from_str(name).value(state)
@@ -207,6 +209,9 @@ def main(source_filename, test_filename):
                         print(
                             f'{str(i+1).rjust(4)}  {BOLD_RED}ERROR{RESET}: {name} expected {pretty_value(expected)} but got {pretty_value(actual)}'
                         )
+                        test_ok = False
+                if not test_ok:
+                    failures += 1
                 continue
 
             line, _, comment = line.partition('#')
@@ -256,13 +261,20 @@ def main(source_filename, test_filename):
                 print(pretty_value(pin.value(state), 8), end='')
             print(comment)
 
+    if failures > 0:
+        print()
+        print(f'{BOLD_RED}{failures} test(s) failed{RESET}.')
+        return 1
+
+    return 0
+
 
 def cli():
     parser = ArgumentParser()
     parser.add_argument('source_filename', help='PLD file to simulate', metavar='SOURCE')
     parser.add_argument('test_filename', help='Test vector file', metavar='TEST')
     args = parser.parse_args()
-    main(args.source_filename, args.test_filename)
+    sys.exit(main(args.source_filename, args.test_filename))
 
 
 if __name__ == '__main__':

@@ -31,7 +31,7 @@ Rules on writing `.vec` files:
 
   E.g. `> /ROM /RAM /IO`
 
-- Lines that start with `?` are test case assertions, they should contain key-value pairs for your tests
+- Lines that start with `?` are test case assertions, they should contain key-value pairs for your tests. Ginger will exit with non-zero code if any test fails.
 
   E.g. `? /ROM=1 /RAM=0 /IO=1`
 
