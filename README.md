@@ -1,6 +1,6 @@
-# ginger
+# GINGER
 
-Ginger Is Not a GAL EmulatoR
+**G**inger **I**s **N**ot a **G**AL **E**mulato**R**
 
 ![Image](https://raw.githubusercontent.com/and3rson/ginger/main/img/example.jpg)
 
