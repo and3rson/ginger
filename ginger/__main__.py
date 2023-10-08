@@ -6,7 +6,7 @@ import re
 import sys
 from collections import namedtuple
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 from dataclasses import dataclass
 
 from lark import Lark, Token, Transformer
@@ -46,6 +46,12 @@ definition = (
 
 grammar = Lark(definition, debug=True)
 
+GRAY = '\033[90m'  # ]
+RESET = '\033[0m'  # ]
+BOLD_GREEN = '\033[1;32m'  # ]
+BLUE = '\033[34m'  # ]
+BOLD_RED = '\033[1;31m'  # ]
+
 
 class PinMode(Enum):
     COMBINATORIAL = 'C'
@@ -71,20 +77,22 @@ class Pin:
     mode: Optional[PinMode] = None
     inv: bool = False
 
+    @classmethod
+    def from_str(cls, s: str, mode=None) -> 'Pin':
+        return Pin(name=s.removeprefix('/'), mode=mode, inv=s.startswith('/'))
+
     def __str__(self):
         return ('/' if self.inv else '') + self.name
 
     def __eq__(self, other):
         return self.name == other.name
 
-    def print(self, state):
+    def value(self, state) -> Optional[bool]:
         value = state[self.name]
         if value is not None:
             if self.inv:
                 value = not value
-        color = BOLD_GREEN if value is True else GRAY if value is False else BLUE
-        text = 'HIGH' if value is True else 'LOW' if value is False else 'Z'
-        return f'{color}{text.ljust(8)}{RESET}'
+        return value
 
 
 @dataclass
@@ -126,30 +134,15 @@ class TreeTransformer(Transformer):
         return children
 
     def pins(self, children):
-        return [
-            Pin(
-                name=str(child).removeprefix('/'),
-                mode=None,
-                inv=str(child).startswith('/'),
-            )
-            for child in children
-        ]
+        return [Pin.from_str(str(child)) for child in children]
 
     def src(self, children):
         name, _, mode = str(children[0]).partition('.')
-        return Pin(
-            name=name.removeprefix('/'),
-            mode=None,
-            inv=name.startswith('/'),
-        )
+        return Pin.from_str(name)
 
     def dest(self, children):
         name, _, mode = str(children[0]).partition('.')
-        return Pin(
-            name=name.removeprefix('/'),
-            mode=(PinMode(mode.upper()) if mode else PinMode.COMBINATORIAL),
-            inv=name.startswith('/'),
-        )
+        return Pin.from_str(name, PinMode(mode.upper()) if mode else PinMode.COMBINATORIAL)
 
     def equation(self, children):
         dest = children[0]
@@ -168,14 +161,10 @@ class TreeTransformer(Transformer):
         )
 
 
-GRAY = '\033[90m'  # ]
-RESET = '\033[0m'  # ]
-BOLD_GREEN = '\033[1;32m'  # ]
-BLUE = '\033[34m'  # ]
-
-
-def tick(state, equations: List[Equation]):
-    return {equation.pin.name: equation.eval(state) for equation in equations}
+def pretty_value(value, ljust=0):
+    color = {True: BOLD_GREEN, False: GRAY, None: BLUE}[value]
+    label = {True: 'HIGH', False: 'LOW', None: 'Z'}[value]
+    return f'{color}{label.ljust(ljust)}{RESET}'
 
 
 def main(source_filename, test_filename):
@@ -203,14 +192,21 @@ def main(source_filename, test_filename):
                 header_printed = False
                 continue
             if line.startswith('<'):
-                in_pins = [
-                    Pin(name=x.removeprefix('/'), mode=None, inv=x.startswith('/')) for x in line.strip('< ').split(' ')
-                ]
+                in_pins = [Pin.from_str(x) for x in line.strip('< ').split(' ')]
                 continue
             if line.startswith('>'):
-                out_pins = [
-                    Pin(name=x.removeprefix('/'), mode=None, inv=x.startswith('/')) for x in line.strip('> ').split(' ')
-                ]
+                out_pins = [Pin.from_str(x) for x in line.strip('> ').split(' ')]
+                continue
+            if line.startswith('?'):
+                # Test case
+                line = line.strip('? ')
+                for name, value in [term.strip().split('=') for term in line.split(' ')]:
+                    expected = True if value == '1' else False if value == '0' else None
+                    actual = Pin.from_str(name).value(state)
+                    if expected != actual:
+                        print(
+                            f'{str(i+1).rjust(4)}  {BOLD_RED}ERROR{RESET}: {name} expected {pretty_value(expected)} but got {pretty_value(actual)}'
+                        )
                 continue
 
             line, _, comment = line.partition('#')
@@ -254,10 +250,10 @@ def main(source_filename, test_filename):
 
             print(str(i + 1).rjust(4) + '  ', end='')
             for pin in in_pins:
-                print(pin.print(state), end='')
+                print(pretty_value(pin.value(state), 8), end='')
             print('|     ', end='')
             for pin in out_pins:
-                print(pin.print(state), end='')
+                print(pretty_value(pin.value(state), 8), end='')
             print(comment)
 
 

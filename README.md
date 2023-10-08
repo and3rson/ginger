@@ -20,11 +20,28 @@ Please see [sample GAL code](https://github.com/and3rson/ginger/blob/main/sample
 
 Rules on writing `.vec` files:
 - Lines that start with `@` are test case names.
-- Lines that start with `<` list signals that you want to input (and each following line needs to set those signals high or low).
+
+  E.g. `@ Test various stuff`
+
+- Lines that start with `<` list signals that you want to input (each following line needs to set those signals high or low).
+
+  E.g. `< A15 A14 A13 A12 /RD /WR`
+
 - Lines that start with `>` list signals that you want to display after every step.
+
+  E.g. `> /ROM /RAM /IO`
+
+- Lines that start with `?` are test case assertions, they should contain key-value pairs for your tests
+
+  E.g. `? /ROM=1 /RAM=0 /IO=1`
+
 - Comments start with `#`. If a comment is added after a vector, it will be printed during run.
+
 - Empty lines are ignored.
-- All other lines are vectors.
+
+- All other non-empty lines are vectors. Whitespaces are ignored and can be added only for visual clarity.
+
+  E.g. `0101 1 1` (equivalent to `0 1 0 1 11` or `010111`)
 
 
 ## Requirements
@@ -39,12 +56,12 @@ Supported:
 - Combinatorial logic
 - Registered logic
 - Tri-states
+- Automated test-case assertions
 
 Not supported (yet?):
 
 - Output enable (ignored)
 - Validation of inputs/outputs
-- Automated test-case assertions
 
 ## Disclaimer & some technical warnings
 

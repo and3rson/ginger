@@ -3,7 +3,9 @@
 > /RAM /ROM
 
 0000 11 1  # Disable memory
+? /RAM=1 /ROM=1
 0000 11 0  # RAM starts @ 0x00000...
+? /RAM=0 /ROM=1
 0001 11 0
 0010 11 0
 0011 11 0
@@ -12,6 +14,7 @@
 0110 11 0
 0111 11 0  # ...and ends @ 0x7FFFF
 1000 11 0  # (0x80000-0xEFFFF unused)
+? /RAM=1 /ROM=1
 1001 11 0
 1010 11 0
 1011 11 0
@@ -19,15 +22,20 @@
 1101 11 0
 1110 11 0
 1111 11 0  # ROM @ 0xF0000-0xFFFFF
+? /RAM=1 /ROM=0
 
 @ I/O ports test
 < A8 /RD /WR /M
 > /IN /OUT /IO
 0 11 1
 0 01 1  # Input  port 0x000
+? /IN=0 /OUT=1 /IO=1
 0 10 1  # Output port 0x000
+? /IN=1 /OUT=0 /IO=1
 1 01 1  # Input  port 0x100
+? /IN=1 /OUT=1 /IO=0
 1 10 1  # Output port 0x100
+? /IN=1 /OUT=1 /IO=0
 
 @ Clock test
 < RST
