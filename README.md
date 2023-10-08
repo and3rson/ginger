@@ -1,6 +1,6 @@
 # GINGER
 
-**G**inger **I**s **N**ot a **G**AL **E**mulato**R**
+<ins>G</ins>inger <ins>I</ins>s <ins>N</ins>ot a <ins>G</ins>AL <ins>E</ins>mulato<ins>R</ins>
 
 ![Image](https://raw.githubusercontent.com/and3rson/ginger/main/img/example.jpg)
 
