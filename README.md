@@ -2,7 +2,7 @@
 
 Ginger Is Not a GAL EmulatoR
 
-![Image](./img/example.jpg)
+![Image](https://raw.githubusercontent.com/and3rson/ginger/main/img/example.jpg)
 
 ## So what is this then?
 
