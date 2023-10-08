@@ -1,6 +1,6 @@
 " Vim syntax file
 " Language:	GINGER vector file
-" Maintainer:	Andrew Dunai <johncook3@gmail.com>
+" Maintainer:	Andrew Dunai <a@dun.ai>
 " Last Change:	2023 Oct 8
 
 " quit when a syntax file was already loaded
