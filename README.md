@@ -38,10 +38,10 @@ Supported:
 
 - Combinatorial logic
 - Registered logic
+- Tri-states
 
 Not supported (yet?):
 
-- Tri-states
 - Output enable (ignored)
 - Validation of inputs/outputs
 - Automated test-case assertions

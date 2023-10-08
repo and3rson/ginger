@@ -47,6 +47,13 @@ definition = (
 grammar = Lark(definition, debug=True)
 
 
+class PinMode(Enum):
+    COMBINATORIAL = 'C'
+    REGISTERED = 'R'
+    TRISTATE = 'T'
+    ENABLE = 'E'
+
+
 @dataclass
 class Header:
     model: str
@@ -56,13 +63,6 @@ class Header:
 @dataclass
 class Footer:
     description: str
-
-
-class PinMode(Enum):
-    COMBINATORIAL = 'C'
-    REGISTERED = 'R'
-    TRISTRATE = 'T'
-    ENABLE = 'E'
 
 
 @dataclass
@@ -79,9 +79,12 @@ class Pin:
 
     def print(self, state):
         value = state[self.name]
-        if self.inv:
-            value = not value
-        return f'{BOLD_GREEN}HIGH    {RESET}' if value else f'{GRAY}LOW     {RESET}'
+        if value is not None:
+            if self.inv:
+                value = not value
+        color = BOLD_GREEN if value is True else GRAY if value is False else BLUE
+        text = 'HIGH' if value is True else 'LOW' if value is False else 'Z'
+        return f'{color}{text.ljust(8)}{RESET}'
 
 
 @dataclass
@@ -101,7 +104,7 @@ class Equation:
             add_result += mul_result
         if self.pin.inv:
             add_result = not add_result
-        return add_result
+        return bool(add_result)
 
 
 @dataclass
@@ -168,6 +171,7 @@ class TreeTransformer(Transformer):
 GRAY = '\033[90m'  # ]
 RESET = '\033[0m'  # ]
 BOLD_GREEN = '\033[1;32m'  # ]
+BLUE = '\033[34m'  # ]
 
 
 def tick(state, equations: List[Equation]):
@@ -225,18 +229,17 @@ def main(source_filename, test_filename):
                 state[pin.name] = value
 
             result = {}
+            tristates = {}
 
             # Execute combinatorial equations
             for equation in tree.equations:
-                if equation.pin.mode == PinMode.COMBINATORIAL:
-                    result[equation.pin.name] = equation.eval(state)
-
-            # Execute registered equations
-            for equation in tree.equations:
-                if equation.pin.mode == PinMode.REGISTERED:
+                if equation.pin.mode == PinMode.ENABLE:
+                    tristates[equation.pin.name] = equation.eval(state)
+                else:
                     result[equation.pin.name] = equation.eval(state)
 
             state.update(result)
+            state.update({pin: None for pin, value in tristates.items() if not value})
 
             if not header_printed:
                 print(
