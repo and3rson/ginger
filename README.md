@@ -16,7 +16,7 @@ pip install ginger-emulator
 ginger ./sample/addr.pld ./sample/addr.vec
 ```
 
-Please see [sample GAL code](./sample/addr.pld) and corresponding [vector file](./sample/addr.vec).
+Please see [sample GAL code](https://github.com/and3rson/ginger/blob/main/sample/addr.pld) and corresponding [vector file](https://github.com/and3rson/ginger/blob/main/sample/addr.vec).
 
 Rules on writing `.vec` files:
 - Lines that start with `@` are test case names.
