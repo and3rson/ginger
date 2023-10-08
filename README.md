@@ -57,11 +57,16 @@ Supported:
 - Registered logic
 - Tri-states
 - Automated test-case assertions
+- Arbitrary inversion of signals in inputs/outputs/assertions (e. g. `? /RAM=1` is equivalent to `? RAM=0`)
 
 Not supported (yet?):
 
 - Output enable (ignored)
 - Validation of inputs/outputs
+
+Perks:
+
+- Vim syntax highlight file can be found [here](https://github.com/and3rson/ginger/blob/main/vim/syntax/vec.vim).
 
 ## Disclaimer & some technical warnings
 
