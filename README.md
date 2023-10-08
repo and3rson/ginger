@@ -9,10 +9,11 @@ Ginger Is Not a GAL EmulatoR
 This is a tool that reads GAL `.pld` files and uses `.vec` files to solve equation.
 Some may call this an emulator, but it is not: it's just an equation solver that feels like it's "emulating" a real GAL.
 
-## How to run?
+## Quick start
 
 ```sh
-python3 -m ginger ./sample/addr.pld ./sample/addr.vec
+pip install ginger-emulator
+ginger ./sample/addr.pld ./sample/addr.vec
 ```
 
 Please see [sample GAL code](./sample/addr.pld) and corresponding [vector file](./sample/addr.vec).

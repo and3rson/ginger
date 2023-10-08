@@ -6,7 +6,7 @@ import re
 import sys
 from collections import namedtuple
 import logging
-from typing import Optional
+from typing import Dict, List, Optional
 from dataclasses import dataclass
 
 from lark import Lark, Token, Transformer
@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 definition = (
     # fmt: off
-    r"""
+    r'''
     %import common.WS_INLINE -> _WS
     %ignore _WS
 
@@ -40,7 +40,7 @@ definition = (
 
     footer: "DESCRIPTION" "\n" DESCRIPTION
     DESCRIPTION: (/.*/ "\n")+
-    """
+    '''
     # fmt: on
 )
 
@@ -59,10 +59,10 @@ class Footer:
 
 
 class PinMode(Enum):
-    COMBINATORIAL = "C"
-    REGISTERED = "R"
-    TRISTRATE = "T"
-    ENABLE = "E"
+    COMBINATORIAL = 'C'
+    REGISTERED = 'R'
+    TRISTRATE = 'T'
+    ENABLE = 'E'
 
 
 @dataclass
@@ -72,7 +72,7 @@ class Pin:
     inv: bool = False
 
     def __str__(self):
-        return f"{'/' if self.inv else ''}{self.name}"
+        return ('/' if self.inv else '') + self.name
 
     def __eq__(self, other):
         return self.name == other.name
@@ -81,15 +81,15 @@ class Pin:
         value = state[self.name]
         if self.inv:
             value = not value
-        return f"{BOLD_GREEN}HIGH    {RESET}" if value else f"{GRAY}LOW     {RESET}"
+        return f'{BOLD_GREEN}HIGH    {RESET}' if value else f'{GRAY}LOW     {RESET}'
 
 
 @dataclass
 class Equation:
     pin: Pin
-    expr: list[list[Pin]]
+    expr: List[List[Pin]]
 
-    def eval(self, state: dict[str, bool]):
+    def eval(self, state: Dict[str, bool]):
         add_result = False
         for addend in self.expr:
             mul_result = True
@@ -107,8 +107,8 @@ class Equation:
 @dataclass
 class Tree:
     header: Header
-    pins: list[Pin]
-    equations: list[Equation]
+    pins: List[Pin]
+    equations: List[Equation]
     footer: Footer
 
 
@@ -125,27 +125,27 @@ class TreeTransformer(Transformer):
     def pins(self, children):
         return [
             Pin(
-                name=str(child).removeprefix("/"),
+                name=str(child).removeprefix('/'),
                 mode=None,
-                inv=str(child).startswith("/"),
+                inv=str(child).startswith('/'),
             )
             for child in children
         ]
 
     def src(self, children):
-        name, _, mode = str(children[0]).partition(".")
+        name, _, mode = str(children[0]).partition('.')
         return Pin(
-            name=name.removeprefix("/"),
+            name=name.removeprefix('/'),
             mode=None,
-            inv=name.startswith("/"),
+            inv=name.startswith('/'),
         )
 
     def dest(self, children):
-        name, _, mode = str(children[0]).partition(".")
+        name, _, mode = str(children[0]).partition('.')
         return Pin(
-            name=name.removeprefix("/"),
+            name=name.removeprefix('/'),
             mode=(PinMode(mode.upper()) if mode else PinMode.COMBINATORIAL),
-            inv=name.startswith("/"),
+            inv=name.startswith('/'),
         )
 
     def equation(self, children):
@@ -165,18 +165,18 @@ class TreeTransformer(Transformer):
         )
 
 
-GRAY = "\033[90m"  # ]
-RESET = "\033[0m"  # ]
-BOLD_GREEN = "\033[1;32m"  # ]
+GRAY = '\033[90m'  # ]
+RESET = '\033[0m'  # ]
+BOLD_GREEN = '\033[1;32m'  # ]
 
 
-def tick(state, equations: list[Equation]):
+def tick(state, equations: List[Equation]):
     return {equation.pin.name: equation.eval(state) for equation in equations}
 
 
 def main(source_filename, test_filename):
-    with open(sys.argv[1], "r") as fobj:
-        content = re.sub(";.*", "", fobj.read())
+    with open(sys.argv[1], 'r') as fobj:
+        content = re.sub(';.*', '', fobj.read())
     tree = grammar.parse(content)
     tree: Tree = TreeTransformer().transform(tree)
 
@@ -185,40 +185,38 @@ def main(source_filename, test_filename):
     header_printed = False
 
     state = {pin.name: False for pin in tree.pins}
-    with open(test_filename, "r") as fobj:
+    with open(test_filename, 'r') as fobj:
         for i, line in enumerate(fobj.readlines()):
             line = line.strip()
             if not line:
                 continue
-            if line.startswith("#"):
+            if line.startswith('#'):
                 continue
 
-            if line.startswith("@"):
+            if line.startswith('@'):
                 # New test
-                print("\n" + line.strip("@ ") + "\n")
+                print('\n' + line.strip('@ ') + '\n')
                 header_printed = False
                 continue
-            if line.startswith("<"):
+            if line.startswith('<'):
                 in_pins = [
-                    Pin(name=x.removeprefix("/"), mode=None, inv=x.startswith("/"))
-                    for x in line.strip("< ").split(" ")
+                    Pin(name=x.removeprefix('/'), mode=None, inv=x.startswith('/')) for x in line.strip('< ').split(' ')
                 ]
                 continue
-            if line.startswith(">"):
+            if line.startswith('>'):
                 out_pins = [
-                    Pin(name=x.removeprefix("/"), mode=None, inv=x.startswith("/"))
-                    for x in line.strip("> ").split(" ")
+                    Pin(name=x.removeprefix('/'), mode=None, inv=x.startswith('/')) for x in line.strip('> ').split(' ')
                 ]
                 continue
 
-            line, _, comment = line.partition("#")
+            line, _, comment = line.partition('#')
             comment = comment.strip()
 
-            line = line.replace(" ", "")
+            line = line.replace(' ', '')
             for ch, pin in zip(line, in_pins):
-                if ch == "1":
+                if ch == '1':
                     value = True
-                elif ch == "0":
+                elif ch == '0':
                     value = False
                 else:
                     continue
@@ -242,29 +240,31 @@ def main(source_filename, test_filename):
 
             if not header_printed:
                 print(
-                    "LINE  " + "".join([str(pin).ljust(8) for pin in in_pins]),
-                    end="",
+                    'LINE  ' + ''.join([str(pin).ljust(8) for pin in in_pins]),
+                    end='',
                 )
-                print("|     ", end="")
+                print('|     ', end='')
                 print(
-                    "".join([str(pin).ljust(8) for pin in out_pins]),
+                    ''.join([str(pin).ljust(8) for pin in out_pins]),
                 )
                 header_printed = True
 
-            print(str(i + 1).rjust(4) + "  ", end="")
+            print(str(i + 1).rjust(4) + '  ', end='')
             for pin in in_pins:
-                print(pin.print(state), end="")
-            print("|     ", end="")
+                print(pin.print(state), end='')
+            print('|     ', end='')
             for pin in out_pins:
-                print(pin.print(state), end="")
+                print(pin.print(state), end='')
             print(comment)
 
 
-if __name__ == "__main__":
+def cli():
     parser = ArgumentParser()
-    parser.add_argument(
-        "source_filename", help="PLD file to simulate", metavar="SOURCE"
-    )
-    parser.add_argument("test_filename", help="Test vector file", metavar="TEST")
+    parser.add_argument('source_filename', help='PLD file to simulate', metavar='SOURCE')
+    parser.add_argument('test_filename', help='Test vector file', metavar='TEST')
     args = parser.parse_args()
     main(args.source_filename, args.test_filename)
+
+
+if __name__ == '__main__':
+    cli()
