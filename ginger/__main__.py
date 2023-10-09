@@ -6,7 +6,7 @@ import re
 import sys
 from collections import namedtuple
 import logging
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass
 
 from lark import Lark, Token, Transformer
@@ -71,7 +71,7 @@ class Footer:
     description: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class Pin:
     name: str
     mode: Optional[PinMode] = None
@@ -95,10 +95,14 @@ class Pin:
         return value
 
 
-@dataclass
+@dataclass(frozen=True)
 class Equation:
     pin: Pin
-    expr: List[List[Pin]]
+    expr: Tuple[Tuple[Pin]]
+
+    @property
+    def dependencies(self) -> List[Pin]:
+        return [factor for addend in self.expr for factor in addend]
 
     def eval(self, state: Dict[str, bool]):
         add_result = False
@@ -131,7 +135,28 @@ class TreeTransformer(Transformer):
         return Footer(description=str(children[0]))
 
     def equations(self, children):
-        return children
+        def iter_tree(equation):
+            if equation.pin.mode == PinMode.REGISTERED:
+                return
+            for pin in equation.dependencies:
+                needed_equation = next((x for x in children if x.pin == pin and x.pin != equation.pin), None)
+                if needed_equation:
+                    yield from iter_tree(needed_equation)
+            yield equation
+
+        seen = set()
+        result = []
+        for root_equation in children:
+            for equation in iter_tree(root_equation):
+                if equation not in seen:
+                    seen.add(equation)
+                    result.append(equation)
+
+        for equation in children:
+            if equation.pin.mode == PinMode.REGISTERED:
+                result.append(equation)
+
+        return result
 
     def pins(self, children):
         return [Pin.from_str(str(child)) for child in children]
@@ -149,7 +174,7 @@ class TreeTransformer(Transformer):
         expr = children[1]
         return Equation(
             pin=dest,
-            expr=[[factor for factor in addend.children] for addend in expr.children],
+            expr=tuple([tuple([factor for factor in addend.children]) for addend in expr.children]),
         )
 
     def start(self, children):
@@ -234,9 +259,13 @@ def main(source_filename, test_filename):
 
             # Execute combinatorial equations
             for equation in tree.equations:
-                if equation.pin.mode == PinMode.ENABLE:
+                if equation.pin.mode in (PinMode.COMBINATORIAL, PinMode.TRISTATE):
+                    state[equation.pin.name] = equation.eval(state)
+                elif equation.pin.mode == PinMode.ENABLE:
                     tristates[equation.pin.name] = equation.eval(state)
-                else:
+            # Execute registered equations
+            for equation in tree.equations:
+                if equation.pin.mode == PinMode.REGISTERED:
                     result[equation.pin.name] = equation.eval(state)
 
             state.update(result)
