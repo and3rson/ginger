@@ -4,7 +4,7 @@ WSESync
 CLK  /WSE   NC    NC      NC      NC    NC    NC    NC    NC    NC    GND
 /OE   A0    A1    SLOWCLK SLOWCS /PHI2  NC    NC    NC    NC    NC    VCC
 
-; SLOWCS(A3),SLOWCLK(A2),A1,A0 - 4-bit counter (1st '163), 0 on reset
+; SLOWCS(A3),SLOWCLK(A2),A1,A0 - 4-bit counter (1st '163)
 ; A3 is cleared if WSE is asserted
 
 A0.R  = /A0

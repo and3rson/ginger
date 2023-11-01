@@ -211,6 +211,8 @@ def print_timing_diagram(history, in_pins, out_pins):
             print(level * 3, end='')
             prev_value = new_value
             # print(, end='')
+        if i < len(in_pins):
+            print('--', end='')
         print()
         print()
 
