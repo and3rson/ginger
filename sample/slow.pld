@@ -1,49 +1,29 @@
 GAL22V10
 WSESync
 
-CLK  /RES  /WSE   NC    NC       NC    NC    NC    NC    NC      NC    GND
-/OE   A0    A1    A2    SLOWCLK /BSR   B0    B1    B2    SLOWCS  PHI2  VCC
+CLK  /WSE   NC    NC      NC      NC    NC    NC    NC    NC    NC    GND
+/OE   A0    A1    SLOWCLK SLOWCS /PHI2  NC    NC    NC    NC    NC    VCC
 
-; A2..A0 - 4-bit counter (1st '163, bit 3 is not used), 0 on reset
+; SLOWCS(A3),SLOWCLK(A2),A1,A0 - 4-bit counter (1st '163), 0 on reset
+; A3 is cleared if WSE is asserted
 
-A0.R  = /A0 * /RES
+A0.R  = /A0
 
-A1.R  =  A0 * /A1 * /RES
-      + /A0 *  A1 * /RES
+A1.R  =  A0 * /A1
+      + /A0 *  A1
 
-A2.R  = /A2 *  A1 *  A0 * /RES
-      +  A2 * /A1       * /RES
-      +  A2 * /A0       * /RES
+SLOWCLK.R  = /SLOWCLK *  A1 *  A0
+           +  SLOWCLK * /A1
+           +  SLOWCLK * /A0
 
-; SLOWCS,B2,B1,B0 - 4-bit counter (2nd '163), 0 on reset, SLOWCS is bit 3
-; Set = /PHI2
-; Reset = PHI2 & /WSE
+SLOWCS.R   = /SLOWCS *  SLOWCLK *  A1 *  A0  * WSE
+           +  SLOWCS * /SLOWCLK              * WSE
+           +  SLOWCS * /A1                   * WSE
+           +  SLOWCS * /A0                   * WSE
 
-BSR  =  PHI2 * /WSE
-
-B0.R  =  A0 * /PHI2 * /RES
-      + /B0 * /BSR  * /RES
-
-B1.R  =  A1         * /PHI2 * /RES
-      +  B0 * /B1   * /BSR  * /RES
-      + /B0 *  B1   * /BSR  * /RES
-
-B2.R  =  A2             * /PHI2 * /RES
-      + /B2 *  B1 *  B0 * /BSR  * /RES
-      +  B2 * /B1       * /BSR  * /RES
-      +  B2 * /B0       * /BSR  * /RES
-
-; Bit 3 of 2nd '163
-SLOWCS.R = /SLOWCS *  B2 *  B1 *  B0 *  /BSR * /RES
-         +  SLOWCS * /B2             *  /BSR * /RES
-         +  SLOWCS * /B1             *  /BSR * /RES
-         +  SLOWCS * /B0             *  /BSR * /RES
-
-; SLOWCLK output, 0 on reset
-SLOWCLK.R = A2 * /RES
-
-; PHI2 output, 1 on reset
-/PHI2.R =  B0 *  B1 *  B2 *  SLOWCS * /RES + PHI2 * /WSE * /RES
+; PHI2 output, in sync with A0 while /WSE is deasserted
+/PHI2.R    = A0 * /WSE
+           + A0 *  A1 *  SLOWCLK *  SLOWCS *  WSE
 
 DESCRIPTION
 Implementation of gfoot's wait-state clock synchronization circuit, with credits to BDD ("wait-state-enable") & Dr Jefyll (original ideas)
