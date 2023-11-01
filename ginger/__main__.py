@@ -34,7 +34,7 @@ definition = (
     equations: equation ("\n"+ equation)*
     equation: dest "=" expr
     dest: PIN | PIN_EXT
-    expr: addend ("\n"? "+" "\n"? addend)*
+    expr: "\n"? addend ("\n"? "+" "\n"? addend)*
     addend: src ("*" src)*
     src: PIN
 
@@ -195,8 +195,10 @@ def pretty_value(value, ljust=0):
 def print_timing_diagram(history, in_pins, out_pins):
     print()
     print('Timing diagram:')
-    for pin in in_pins + out_pins:
-        print(pin.name.ljust(8), end='')
+    for i, pin in enumerate(in_pins + out_pins):
+        print(str(pin).ljust(8), end='')
+        if i >= len(in_pins):
+            print('--', end='')
         prev_value = None
         for state in history:
             new_value = pin.value(state)
@@ -206,11 +208,24 @@ def print_timing_diagram(history, in_pins, out_pins):
                     print('/' if not prev_value else '\\', end='')
                 else:
                     print(level, end='')
-            print(level * 2, end='')
+            print(level * 3, end='')
             prev_value = new_value
             # print(, end='')
         print()
         print()
+
+
+def run_test(i, line, state):
+    test_ok = True
+    for name, value in [term.strip().split('=') for term in line.split(' ')]:
+        expected = True if value == '1' else False if value == '0' else None
+        actual = Pin.from_str(name).value(state)
+        if expected != actual:
+            print(
+                f'{str(i+1).rjust(4)}  {BOLD_RED}ERROR{RESET}: {name} expected {pretty_value(expected)} but got {pretty_value(actual)}'
+            )
+            test_ok = False
+    return test_ok
 
 
 def main(source_filename, test_filename, timing_diagram):
@@ -226,7 +241,7 @@ def main(source_filename, test_filename, timing_diagram):
 
     history = []
 
-    state = {pin.name: False for pin in tree.pins}
+    state = {pin.name: True for pin in tree.pins}
     with open(test_filename, 'r') as fobj:
         lines = fobj.readlines()
         for i, line in enumerate(lines):
@@ -254,21 +269,14 @@ def main(source_filename, test_filename, timing_diagram):
             if line.startswith('?'):
                 # Test case
                 line = line.strip('? ')
-                test_ok = True
-                for name, value in [term.strip().split('=') for term in line.split(' ')]:
-                    expected = True if value == '1' else False if value == '0' else None
-                    actual = Pin.from_str(name).value(state)
-                    if expected != actual:
-                        print(
-                            f'{str(i+1).rjust(4)}  {BOLD_RED}ERROR{RESET}: {name} expected {pretty_value(expected)} but got {pretty_value(actual)}'
-                        )
-                        test_ok = False
-                if not test_ok:
+                if not run_test(i, line, state):
                     failures += 1
                 continue
 
             line, _, comment = line.partition('#')
+            line, _, test = line.partition('?')
             comment = comment.strip()
+            test = test.strip()
 
             line = line.replace(' ', '')
             for ch, pin in zip(line, in_pins):
@@ -295,6 +303,12 @@ def main(source_filename, test_filename, timing_diagram):
             for equation in tree.equations:
                 if equation.pin.mode == PinMode.REGISTERED:
                     result[equation.pin.name] = equation.eval(state)
+            # Execute combinatorial equations
+            for equation in tree.equations:
+                if equation.pin.mode in (PinMode.COMBINATORIAL, PinMode.TRISTATE):
+                    state[equation.pin.name] = equation.eval(state)
+                elif equation.pin.mode == PinMode.ENABLE:
+                    tristates[equation.pin.name] = equation.eval(state)
 
             state.update(result)
             state.update({pin: None for pin, value in tristates.items() if not value})
@@ -319,6 +333,10 @@ def main(source_filename, test_filename, timing_diagram):
             for pin in out_pins:
                 print(pretty_value(pin.value(state), 8), end='')
             print(comment)
+
+            if test:
+                if not run_test(i, test, state):
+                    failures += 1
 
     if history:
         if timing_diagram:
