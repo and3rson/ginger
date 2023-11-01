@@ -27,4 +27,4 @@ SLOWCS.R   = /SLOWCS *  SLOWCLK *  A1 *  A0  * WSE
 
 DESCRIPTION
 Implementation of gfoot's wait-state clock synchronization circuit, with credits to BDD ("wait-state-enable") & Dr Jefyll (original ideas)
-riginal thread: http://forum.6502.org/viewtopic.php?f=4&t=7798
+Original thread: http://forum.6502.org/viewtopic.php?f=4&t=7798
