@@ -1,0 +1,50 @@
+GAL22V10
+WSESync
+
+CLK  /WSE   NC    NC    NC       NC    NC    NC    NC    NC      NC    GND
+/OE   A0    A1    A2    SLOWCLK /BSR   B0    B1    B2    SLOWCS  PHI2  VCC
+
+; A2..A0 - 4-bit counter (1st '163, bit 3 is not used)
+
+A0.R  =  /A0
+
+A1.R  =  A0 * /A1
+      + /A0 *  A1
+
+A2.R  = /A2 *  A1 *  A0
+      +  A2 * /A1
+      +  A2 * /A0
+
+; SLOWCS,B2,B1,B0 - 4-bit counter (2nd '163), SLOWCS is bit 3
+; Set = /PHI2
+; Reset = PHI2 & /WSE
+
+BSR  =  PHI2 * /WSE
+
+B0.R  =  A0 * /PHI2
+      + /B0 * /BSR
+
+B1.R  =  A1         * /PHI2
+      +  B0 * /B1   * /BSR
+      + /B0 *  B1   * /BSR
+
+B2.R  =  A2             * /PHI2
+      + /B2 *  B1 *  B0 * /BSR
+      +  B2 * /B1       * /BSR
+      +  B2 * /B0       * /BSR
+
+; Bit 3 of 2nd '163
+SLOWCS.R = /SLOWCS *  B2 *  B1 *  B0 *  /BSR
+         +  SLOWCS * /B2             *  /BSR
+         +  SLOWCS * /B1             *  /BSR
+         +  SLOWCS * /B0             *  /BSR
+
+; SLOWCLK output
+SLOWCLK.R = A2
+
+; PHI2 output
+/PHI2.R =  B0 *  B1 *  B2 *  SLOWCS + PHI2 * /WSE
+
+DESCRIPTION
+Implementation of gfoot's wait-state clock synchronization circuit, with credits to BDD ("wait-state-enable") & Dr Jefyll (original ideas)
+riginal thread: http://forum.6502.org/viewtopic.php?f=4&t=7798
