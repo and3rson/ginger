@@ -58,6 +58,7 @@ Supported:
 - Tri-states
 - Automated test-case assertions
 - Arbitrary inversion of signals in inputs/outputs/assertions (e. g. `? /RAM=1` is equivalent to `? RAM=0`)
+- Timing diagram generation
 
 Not supported (yet?):
 
