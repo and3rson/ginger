@@ -192,7 +192,28 @@ def pretty_value(value, ljust=0):
     return f'{color}{label.ljust(ljust)}{RESET}'
 
 
-def main(source_filename, test_filename):
+def print_timing_diagram(history, in_pins, out_pins):
+    print()
+    print('Timing diagram:')
+    for pin in in_pins + out_pins:
+        print(pin.name.ljust(8), end='')
+        prev_value = None
+        for state in history:
+            new_value = pin.value(state)
+            level = '_' if not new_value else '\u203e'
+            if prev_value is not None:
+                if prev_value != new_value:
+                    print('/' if not prev_value else '\\', end='')
+                else:
+                    print(level, end='')
+            print(level * 2, end='')
+            prev_value = new_value
+            # print(, end='')
+        print()
+        print()
+
+
+def main(source_filename, test_filename, timing_diagram):
     with open(sys.argv[1], 'r') as fobj:
         content = re.sub(';.*', '', fobj.read())
     tree = grammar.parse(content)
@@ -203,9 +224,12 @@ def main(source_filename, test_filename):
     header_printed = False
     failures = 0
 
+    history = []
+
     state = {pin.name: False for pin in tree.pins}
     with open(test_filename, 'r') as fobj:
-        for i, line in enumerate(fobj.readlines()):
+        lines = fobj.readlines()
+        for i, line in enumerate(lines):
             line = line.strip()
             if not line:
                 continue
@@ -214,6 +238,10 @@ def main(source_filename, test_filename):
 
             if line.startswith('@'):
                 # New test
+                if history:
+                    if timing_diagram:
+                        print_timing_diagram(history, in_pins, out_pins)
+                    history = []
                 print('\n' + line.strip('@ ') + '\n')
                 header_printed = False
                 continue
@@ -271,6 +299,8 @@ def main(source_filename, test_filename):
             state.update(result)
             state.update({pin: None for pin, value in tristates.items() if not value})
 
+            history.append(dict(state))
+
             if not header_printed:
                 print(
                     'LINE  ' + ''.join([str(pin).ljust(8) for pin in in_pins]),
@@ -290,6 +320,10 @@ def main(source_filename, test_filename):
                 print(pretty_value(pin.value(state), 8), end='')
             print(comment)
 
+    if history:
+        if timing_diagram:
+            print_timing_diagram(history, in_pins, out_pins)
+
     if failures > 0:
         print()
         print(f'{BOLD_RED}{failures} test(s) failed{RESET}.')
@@ -302,8 +336,9 @@ def cli():
     parser = ArgumentParser()
     parser.add_argument('source_filename', help='PLD file to simulate', metavar='SOURCE')
     parser.add_argument('test_filename', help='Test vector file', metavar='TEST')
+    parser.add_argument('-t', '--timing_diagram', action='store_true', help='Print timing diagrams after each test')
     args = parser.parse_args()
-    sys.exit(main(args.source_filename, args.test_filename))
+    sys.exit(main(args.source_filename, args.test_filename, args.timing_diagram))
 
 
 if __name__ == '__main__':
