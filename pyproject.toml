@@ -1,6 +1,6 @@
 [project]
 name = "ginger-emulator"
-version = "0.2.6"
+version = "0.2.7"
 authors = [
   { name="Andrew Dunai", email="a@dun.ai" },
 ]
