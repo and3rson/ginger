@@ -23,7 +23,7 @@ definition = (
     start: header "\n"* pins "\n"* equations "\n"* footer
 
     header: MODEL "\n" NAME "\n"
-    MODEL: "GAL16V8" | "GAL20V8" | "GAL22V10"
+    MODEL: "GAL" /[0-9a-zA-Z]+/
     NAME: /[A-Za-z0-9_\.]+/
 
     pins: (PIN+ "\n")+
@@ -242,8 +242,24 @@ def main(source_filename, test_filename, timing_diagram):
     failures = 0
 
     history = []
+    state = {'GND': False, 'VCC': True}
 
-    state = {pin.name: True for pin in tree.pins}
+    if tree.header.model not in ('GAL16V8', 'GAL20V8', 'GAL22V10'):
+        print(f'Unknown GAL/ATF model: {tree.header.model}')
+        return 1
+
+    if tree.header.model == 'GAL22V10':
+        # In GAL22V10, initial state of output registers is based on programmed polarity (1 if active-low, 0 if active-high)
+        for equation in tree.equations:
+            if equation.pin.mode == PinMode.REGISTERED:
+                state[equation.pin.name] = equation.pin.inv
+    else:
+        # In GAL16V8 and GAL20V8, initial state of output registers is always 1
+        for equation in tree.equations:
+            if equation.pin.mode == PinMode.REGISTERED:
+                state[equation.pin.name] = True
+
+    # state = {pin.name: False for pin in tree.pins}
     with open(test_filename, 'r') as fobj:
         lines = fobj.readlines()
         for i, line in enumerate(lines):
